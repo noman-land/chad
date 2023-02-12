@@ -1,4 +1,10 @@
-import { Env, openAiApi, RequestJson, slackPost } from './utils';
+import {
+  Env,
+  openAiApi,
+  OpenAiResponse,
+  RequestJson,
+  slackPost,
+} from './utils';
 
 export default {
   async fetch(
@@ -18,26 +24,29 @@ export default {
         token === env.SLACK_VERIFICATION_TOKEN
       ) {
         const [, ...message] = text.split(' ');
-        const openAiResponse = await openAiApi(message.join(' '), env);
 
-        const {
-          choices: [choice],
-        } = await openAiResponse.json();
+        context.waitUntil(
+          openAiApi(message.join(' '), env).then(async openAiResponse => {
+            const {
+              choices: [{ text }],
+            }: OpenAiResponse = await openAiResponse.json();
 
-        console.log(choice);
-
-        await slackPost(
-          'chat.postMessage',
-          {
-            text: choice.text,
-            channel,
-            link_names: false,
-            unfurl_links: false,
-          },
-          env
+            return slackPost(
+              'chat.postMessage',
+              {
+                text,
+                channel,
+                link_names: false,
+                unfurl_links: true,
+                unfurl_media: true,
+              },
+              env
+            );
+          })
         );
+
+        return new Response(null, { status: 200 });
       }
-      return new Response(null, { status: 200 });
     }
     return new Response(null, { status: 401 });
   },

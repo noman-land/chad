@@ -31,6 +31,13 @@ export interface AppMentionEvent {
   event_ts: string;
 }
 
+interface CompletionChoice {
+  text: string;
+}
+export interface OpenAiResponse {
+  choices: CompletionChoice[];
+}
+
 interface Body {
   body: string;
   contentType?: string;
@@ -62,10 +69,10 @@ export const openAiApi = async (prompt: string, env: Env) =>
     method: 'POST',
     body: JSON.stringify({
       model: 'text-davinci-003',
-      // model: 'text-ada-001',
+      // model: 'text-ada-001', // for testing
       prompt,
-      max_tokens: 32,
-      // stream: true,
+      max_tokens: 256,
+      // stream: true, // TODO
     }),
   });
 
