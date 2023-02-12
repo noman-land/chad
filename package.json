@@ -1,10 +1,11 @@
 {
   "name": "chad",
   "version": "0.1.0",
-  "description": "Chat to ChatGPT via a Slackbot",
+  "description": "Chat to ChatGPT via Slack",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx wrangler dev",
+    "publish": "npx wrangler publish src/index.ts"
   },
   "author": "Noman",
   "license": "MIT",
