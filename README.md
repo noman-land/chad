@@ -4,7 +4,7 @@ Chat to ChatGPT via Slack
 
 You must have an env file called `.dev.vars` with the following variables
 
-```
+```env
 SLACK_APP_ID=XXXXXXXXXXX
 SLACK_BOT_TOKEN=xoxb-XXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
 SLACK_SIGNING_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
