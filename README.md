@@ -1,4 +1,4 @@
-# Chad <img src="./chad.png" height=64/>
+# <img src="./chad.png" height=48/> Chad
 
 Chat to ChatGPT via Slack
 
