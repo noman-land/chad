@@ -4,6 +4,7 @@
   "description": "Chat to ChatGPT via Slack",
   "main": "index.js",
   "scripts": {
+    "tail": "npx wrangler tail",
     "start": "npx wrangler dev",
     "publish": "npx wrangler publish src/index.ts"
   },

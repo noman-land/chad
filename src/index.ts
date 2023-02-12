@@ -43,12 +43,14 @@ export default {
           {
             text,
             channel,
-            link_names: false,
+            link_names: true,
             unfurl_links: true,
             unfurl_media: true,
           },
           env
-        );
+        ).then(resp => {
+          console.log('\n\n\n\nAFTER SLACK POST\n\n\n\n', resp, '\n\n\n\n');
+        });
       })
     );
 

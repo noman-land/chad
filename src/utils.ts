@@ -17,10 +17,10 @@ export interface Env {
 export interface RequestJson {
   api_app_id: string;
   token: string;
-  event: AppMentionEvent;
+  event: SlackAppMentionEvent;
 }
 
-export interface AppMentionEvent {
+export interface SlackAppMentionEvent {
   client_msg_id: string;
   type: 'app_mention';
   text: string;
@@ -34,6 +34,7 @@ export interface AppMentionEvent {
 interface CompletionChoice {
   text: string;
 }
+
 export interface OpenAiResponse {
   choices: CompletionChoice[];
 }
