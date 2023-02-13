@@ -1,5 +1,6 @@
 name = "chad"
 main = "src/index.ts"
 node_compat = true
+workers_dev = false
 compatibility_date = "2023-02-09"
 route = { pattern = "https://api.noman.land/chad/v1/mention", zone_name = "noman.land" }
