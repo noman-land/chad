@@ -5,7 +5,11 @@
   "main": "src/index.ts",
   "scripts": {
     "tail": "npx wrangler tail",
-    "start": "npx wrangler dev",
+    "start": "npx wrangler dev --port 8021 --local",
+    "start:local-bypass": "npm run tunnel & npm run local-bypass:start && npm start && npm run local-bypass:stop",
+    "tunnel": "cloudflared tunnel run --url localhost:8021 chad-local",
+    "local-bypass:start": "npx wrangler kv:key --binding CHAD --preview false put LOCAL_BYPASS_ENABLED true",
+    "local-bypass:stop": "npx wrangler kv:key --binding CHAD --preview false delete LOCAL_BYPASS_ENABLED",
     "publish": "npx wrangler publish src/index.ts"
   },
   "author": "Noman",
@@ -14,6 +18,6 @@
     "@cloudflare/workers-types": "^4.20230115.0",
     "typescript": "^4.9.5",
     "vitest": "^0.28.4",
-    "wrangler": "^2.9.1"
+    "wrangler": "^2.10.0"
   }
 }

@@ -4,6 +4,7 @@ export interface Env {
   SLACK_SIGNING_SECRET: string;
   SLACK_VERIFICATION_TOKEN: string;
   OPEN_AI_API_KEY: string;
+  CHAD: KVNamespace;
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
   // MY_KV_NAMESPACE: KVNamespace;
   //

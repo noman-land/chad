@@ -4,3 +4,6 @@ node_compat = true
 workers_dev = false
 compatibility_date = "2023-02-09"
 route = { pattern = "https://api.noman.land/chad/v1/mention", zone_name = "noman.land" }
+kv_namespaces = [
+  { binding = "CHAD", id = "8f78879824644b21bf3e2f7c7c82a80f", preview_id = "0ca0d7e803714cc996340f1de7a3ff1b" }
+]
