@@ -5,11 +5,11 @@
   "main": "src/index.ts",
   "scripts": {
     "tail": "npx wrangler tail",
-    "start": "npx wrangler dev --port 8021 --local",
-    "start:local-bypass": "npm run tunnel & npm run local-bypass:start && npm start && npm run local-bypass:stop",
+    "start": "npx wrangler dev --port=8021 --local",
+    "start:local-bypass": "trap 'npm run delete-local-var; kill 0' SIGINT; npm run tunnel & npm run set-local-var & npm start",
     "tunnel": "cloudflared tunnel run --url localhost:8021 chad-local",
-    "local-bypass:start": "npx wrangler kv:key --binding CHAD --preview false put LOCAL_BYPASS_ENABLED true",
-    "local-bypass:stop": "npx wrangler kv:key --binding CHAD --preview false delete LOCAL_BYPASS_ENABLED",
+    "set-local-var": "npx wrangler --binding=CHAD --preview=false kv:key put LOCAL_BYPASS_ENABLED true",
+    "delete-local-var": "npx wrangler --binding=CHAD --preview=false kv:key delete LOCAL_BYPASS_ENABLED",
     "publish": "npx wrangler publish src/index.ts"
   },
   "author": "Noman",
