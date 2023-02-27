@@ -46,7 +46,12 @@ export default {
     //   })
     // );
 
-    const prependedPrompt = `Your name is Chad and your Slack handle is <@${env.CHAD_SLACK_ID}>. ${userPrompt}`;
+    const replacedPrompt = userPrompt.replaceAll(
+      `<@${env.CHAD_SLACK_ID}>`,
+      'Chad'
+    );
+
+    const prependedPrompt = `Your name is Chad and your Slack handle is "<@${env.CHAD_SLACK_ID}>". Everything that follows is a conversation between you and your friends in Slack.\n\nfriend: ${replacedPrompt}\n\nyou: `;
 
     context.waitUntil(
       openAiApi(prependedPrompt, env)
