@@ -2,8 +2,8 @@ import {
   Env,
   openAiApi,
   OpenAiResponse,
+  postSlackMessage,
   RequestJson,
-  slackPost,
 } from './utils';
 
 export default {
@@ -14,6 +14,15 @@ export default {
   ): Promise<Response> {
     if (request.method !== 'POST') {
       return new Response(null, { status: 404 });
+    }
+
+    if (await env.CHAD.get('LOCAL_BYPASS_ENABLED')) {
+      console.log('* * * BYPASSING DEPLOY TO LOCAL TUNNEL * * *');
+      return fetch(env.TUNNEL_URL, {
+        headers: request.headers,
+        body: request.body,
+        method: request.method,
+      });
     }
 
     const {
@@ -27,17 +36,6 @@ export default {
       token !== env.SLACK_VERIFICATION_TOKEN
     ) {
       return new Response(null, { status: 401 });
-    }
-
-    if (await env.CHAD.get('LOCAL_BYPASS_ENABLED')) {
-      return fetch('https://chad-local.noman.land', {
-        headers: request.headers,
-        body: request.body,
-        method: request.method,
-      }).catch(e => {
-        console.log(e);
-        throw new Error(e);
-      });
     }
 
     // context.waitUntil(
@@ -54,44 +52,27 @@ export default {
     const prependedPrompt = `Your name is Chad and your Slack handle is "<@${env.CHAD_SLACK_ID}>". Everything that follows is a conversation between you and your friends in Slack.\n\nfriend: ${replacedPrompt}\n\nyou: `;
 
     context.waitUntil(
-      openAiApi(prependedPrompt, env)
-        .then(async openAiResponse => {
-          const {
-            choices: [{ text: chadResponse }],
-          }: OpenAiResponse = await openAiResponse.json();
+      openAiApi(prependedPrompt, env).then(async openAiResponse => {
+        const {
+          choices: [{ text: chadResponse }],
+        }: OpenAiResponse = await openAiResponse.json();
 
-          console.log({ prependedPrompt, chadResponse });
+        console.log({ prependedPrompt, chadResponse });
 
-          const resp = await slackPost(
-            'chat.postMessage',
-            {
-              text: chadResponse,
-              channel,
-              link_names: true,
-              unfurl_links: true,
-              unfurl_media: true,
-            },
-            env
-          );
+        return postSlackMessage(chadResponse, channel, env);
 
-          return resp;
-
-          // const { ts } = await resp.json();
-          // // console.log('\n\n\n\nAFTER SLACK POST\n\n\n\n', obj, '\n\n\n\n');
-          // slackPost(
-          //   'chat.update',
-          //   {
-          //     text,
-          //     channel,
-          //     ts,
-          //   },
-          //   env
-          // );
-        })
-        .catch(e => {
-          console.error(e);
-          throw new Error(e);
-        })
+        // const { ts } = await resp.json();
+        // // console.log('\n\n\n\nAFTER SLACK POST\n\n\n\n', obj, '\n\n\n\n');
+        // slackPost(
+        //   'chat.update',
+        //   {
+        //     text,
+        //     channel,
+        //     ts,
+        //   },
+        //   env
+        // );
+      })
     );
 
     return new Response(null, { status: 200 });

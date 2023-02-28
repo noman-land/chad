@@ -6,6 +6,7 @@ export interface Env {
   OPEN_AI_API_KEY: string;
   CHAD: KVNamespace;
   CHAD_SLACK_ID: string;
+  TUNNEL_URL: string;
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
   // MY_KV_NAMESPACE: KVNamespace;
   //
@@ -79,12 +80,29 @@ export const openAiApi = async (prompt: string, env: Env) =>
     }),
   });
 
-export const slackPost = async (url: string, body: Object, env: Env) =>
+const slackPost = async (url: string, body: Object, env: Env) =>
   slackApi(
     url,
     {
       body: JSON.stringify(body),
       method: 'POST',
+    },
+    env
+  );
+
+export const postSlackMessage = async (
+  message: string,
+  channel: string,
+  env: Env
+) =>
+  slackPost(
+    'chat.postMessage',
+    {
+      text: message,
+      channel,
+      link_names: true,
+      unfurl_links: true,
+      unfurl_media: true,
     },
     env
   );
