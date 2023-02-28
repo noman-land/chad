@@ -24,13 +24,13 @@ export interface RequestJson {
 }
 
 export const TEAM = {
-  U2678E7RB: 'D man',
+  U2678E7RB: 'The D',
   U273NJQ82: 'K dog',
-  U267FGD7X: 'D boy',
-  U267U9KRQ: 'Mythical Being of Unknown Makeup, Origin or Character',
+  U267FGD7X: 'D Boy',
+  U267U9KRQ: 'Mythical Being of Unknown Makeup, Origin, or Character',
   U26S2Q3LP: 'J guy',
   U26B7EQ95: 'Sus dude',
-  U267EB007: 'Bleak bee',
+  U267EB007: 'B man',
   U02NMDPELBC: 'Señor abs',
   U267MBM98: 'Z mon',
 };
