@@ -1,9 +1,11 @@
 import {
   Env,
+  handle,
   openAiApi,
   OpenAiResponse,
   postSlackMessage,
   RequestJson,
+  TEAM,
 } from './utils';
 
 export default {
@@ -17,8 +19,10 @@ export default {
     }
 
     if (await env.CHAD.get('LOCAL_BYPASS_ENABLED')) {
-      console.log('* * * BYPASSING DEPLOY TO LOCAL TUNNEL * * *');
-      return fetch(env.TUNNEL_URL, {
+      console.log('* * * * * * * * * * * * * * * * * * *');
+      console.log('* * * BYPASSING TO LOCAL TUNNEL * * *');
+      console.log('* * * * * * * * * * * * * * * * * * *');
+      return fetch(`https://${env.TUNNEL_URL}`, {
         headers: request.headers,
         body: request.body,
         method: request.method,
@@ -28,7 +32,7 @@ export default {
     const {
       api_app_id,
       token,
-      event: { channel, text: userPrompt },
+      event: { channel, text: userPrompt, user },
     }: RequestJson = await request.json();
 
     if (
@@ -44,12 +48,16 @@ export default {
     //   })
     // );
 
-    const replacedPrompt = userPrompt.replaceAll(
-      `<@${env.CHAD_SLACK_ID}>`,
-      'Chad'
-    );
+    const chadSlackHandle = handle(env.CHAD_SLACK_ID);
+    const replacedPrompt = userPrompt.replaceAll(chadSlackHandle, 'Chad');
 
-    const prependedPrompt = `Your name is Chad and your Slack handle is "<@${env.CHAD_SLACK_ID}>". Everything that follows is a conversation between you and your friends in Slack.\n\nfriend: ${replacedPrompt}\n\nyou: `;
+    const prependedPrompt = [
+      `Your name is Chad and your Slack handle is "${chadSlackHandle}".`,
+      `\n\nHere is the friend lookup: ${JSON.stringify(TEAM, null, 2)}`,
+      `\n\nEverything that follows is a conversation between you and your friends in Slack.`,
+      `\n\n${TEAM[user]} ("${handle(user)}"): ${replacedPrompt}`,
+      `\n\nYou: `,
+    ].join(' ');
 
     context.waitUntil(
       openAiApi(prependedPrompt, env).then(async openAiResponse => {

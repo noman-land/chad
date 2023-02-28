@@ -23,11 +23,23 @@ export interface RequestJson {
   event: SlackAppMentionEvent;
 }
 
+export const TEAM = {
+  U2678E7RB: 'D man',
+  U273NJQ82: 'K dog',
+  U267FGD7X: 'D boy',
+  U267U9KRQ: 'Mythical Being of Unknown Makeup, Origin or Character',
+  U26S2Q3LP: 'J guy',
+  U26B7EQ95: 'Sus dude',
+  U267EB007: 'Bleak bee',
+  U02NMDPELBC: 'Señor abs',
+  U267MBM98: 'Z mon',
+};
+
 export interface SlackAppMentionEvent {
   client_msg_id: string;
   type: 'app_mention';
   text: string;
-  user: string;
+  user: keyof typeof TEAM;
   ts: string;
   team: string;
   channel: string;
@@ -47,6 +59,8 @@ interface Body {
   contentType?: string;
   method?: string;
 }
+
+export const handle = (id: string) => `<@${id}>`;
 
 type SlackApi = (url: string, body: Body, env: Env) => Promise<Object>;
 
