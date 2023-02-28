@@ -60,7 +60,13 @@ interface Body {
   method?: string;
 }
 
-export const handle = (id: string) => `<@${id}>`;
+type Handle = `<@${keyof typeof TEAM | string}>`;
+
+export const handle = (id: keyof typeof TEAM | string): Handle => `<@${id}>`;
+export const handlify = (obj: Object): { [K: Handle]: string } =>
+  Object.fromEntries(
+    Object.entries(obj).map(([user, name]) => [handle(user), name])
+  );
 
 type SlackApi = (url: string, body: Body, env: Env) => Promise<Object>;
 
@@ -89,7 +95,7 @@ export const openAiApi = async (prompt: string, env: Env) =>
       model: 'text-davinci-003',
       // model: 'text-ada-001', // for testing
       prompt,
-      max_tokens: 256,
+      max_tokens: 300,
       // stream: true, // TODO
     }),
   });

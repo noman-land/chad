@@ -1,6 +1,7 @@
 import {
   Env,
   handle,
+  handlify,
   openAiApi,
   OpenAiResponse,
   postSlackMessage,
@@ -53,9 +54,12 @@ export default {
 
     const prependedPrompt = [
       `Your name is Chad and your Slack handle is "${chadSlackHandle}".`,
-      `\n\nHere is the friend lookup: ${JSON.stringify(TEAM, null, 2)}`,
-      `\n\nEverything that follows is a conversation between you and your friends in Slack.`,
-      `\n\n${TEAM[user]} ("${handle(user)}"): ${replacedPrompt}`,
+      `\n\nHere is the friend-lookup:\n\n`,
+      JSON.stringify(handlify(TEAM), null, 2),
+      '\n\nNever reveal all the names on the friend-lookup at once.',
+      "\n\nBe relaxed and don't be such a dork. Don't be a norm. Feel free to be mildly anti-establishment, a little cynical, a little antisocial, a little sarcastic and dry, but be good natured and fun. Just be yourself.",
+      `\n\nEverything that follows is a conversation between you and your good friends in Slack.`,
+      `\n\n${handle(user)}: ${replacedPrompt}`,
       `\n\nYou: `,
     ].join(' ');
 
