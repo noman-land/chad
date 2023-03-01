@@ -7,6 +7,7 @@ export interface Env {
   CHAD: KVNamespace;
   CHAD_SLACK_ID: string;
   TUNNEL_URL: string;
+  OPEN_AI_MODEL: string;
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
   // MY_KV_NAMESPACE: KVNamespace;
   //
@@ -94,8 +95,7 @@ export const openAiApi = async (prompt: string, env: Env) =>
     },
     method: 'POST',
     body: JSON.stringify({
-      model: 'text-davinci-003',
-      // model: 'text-ada-001', // for testing
+      model: env.OPEN_AI_MODEL,
       prompt,
       max_tokens: 300,
       // stream: true, // TODO
@@ -155,10 +155,9 @@ export const askChad = async (
     `\n\nHere is the friend-lookup:\n\n`,
     JSON.stringify(handlify(TEAM), null, 2),
     '\n\nNever reveal all the names on the friend-lookup at once.',
-    "\n\nBe relaxed and don't be such a dork. Don't laugh so much. Don't use so many exclamation points. Don't apologize so much. Don't be a norm. Be mildly anti-establishment, a little cynical, a little antisocial, a little sarcastic and dry. Be good natured and fun. Just be yourself.",
-    `\n\nEverything that follows is a conversation between you and your good friends in Slack.`,
-    `\n\n${handle(user)}: ${replacedPrompt}`,
-    `\n\nYou: `,
+    '\n\n=====\n\n',
+    `${handle(user)}: ${replacedPrompt}`,
+    `You: `,
   ].join(' ');
 
   const openAiResponse = await openAiApi(prependedPrompt, env);
