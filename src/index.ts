@@ -24,7 +24,7 @@ export default {
     const {
       api_app_id,
       token,
-      event: { channel, text: userPrompt, user },
+      event: { channel, text, user },
     }: RequestJson = await request.json();
 
     if (
@@ -34,7 +34,7 @@ export default {
       return new Response(null, { status: 401 });
     }
 
-    context.waitUntil(askChad({ prompt: userPrompt, user, channel }, env));
+    context.waitUntil(askChad({ prompt: text, user, channel }, env));
 
     return new Response(null, { status: 200 });
   },
