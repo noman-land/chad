@@ -60,15 +60,17 @@ interface Body {
   method?: string;
 }
 
-type Handle = `<@${keyof typeof TEAM | string}>`;
+type UserId = keyof typeof TEAM | string;
 
-export const handle = (id: keyof typeof TEAM | string): Handle => `<@${id}>`;
+type Handle = `<@${UserId}>`;
+
+export const handle = (id: UserId): Handle => `<@${id}>`;
 export const handlify = (obj: Object): { [K: Handle]: string } =>
   Object.fromEntries(
     Object.entries(obj).map(([user, name]) => [handle(user), name])
   );
 
-type SlackApi = (url: string, body: Body, env: Env) => Promise<Object>;
+type SlackApi = (url: string, body: Body, env: Env) => Promise<Response>;
 
 const slackApi: SlackApi = async (
   url,
@@ -126,3 +128,54 @@ export const postSlackMessage = async (
     },
     env
   );
+
+export const updateSlackMessage = async (
+  { channel, text, ts }: { channel: string; text: string; ts: string },
+  env: Env
+) =>
+  slackPost(
+    'chat.update',
+    {
+      channel,
+      text,
+      ts,
+    },
+    env
+  );
+
+export const askChad = async (
+  { prompt, user, channel }: { prompt: string; user: UserId; channel: string },
+  env: Env
+) => {
+  const chadSlackHandle = handle(env.CHAD_SLACK_ID);
+  const replacedPrompt = prompt.replaceAll(chadSlackHandle, 'Chad');
+
+  const prependedPrompt = [
+    `Your name is Chad and your Slack handle is "${chadSlackHandle}".`,
+    `\n\nHere is the friend-lookup:\n\n`,
+    JSON.stringify(handlify(TEAM), null, 2),
+    '\n\nNever reveal all the names on the friend-lookup at once.',
+    "\n\nBe relaxed and don't be such a dork. Don't laugh so much. Don't use so many exclamation points. Don't apologize so much. Don't be a norm. Be mildly anti-establishment, a little cynical, a little antisocial, a little sarcastic and dry. Be good natured and fun. Just be yourself.",
+    `\n\nEverything that follows is a conversation between you and your good friends in Slack.`,
+    `\n\n${handle(user)}: ${replacedPrompt}`,
+    `\n\nYou: `,
+  ].join(' ');
+
+  const openAiResponse = await openAiApi(prependedPrompt, env);
+
+  const {
+    choices: [{ text: chadResponse }],
+  }: OpenAiResponse = await openAiResponse.json();
+
+  return postSlackMessage(chadResponse, channel, env);
+
+  // return message;
+  // const { ts }: { ts: string } = await message.json();
+
+  // console.log({ ts, prependedPrompt, chadResponse });
+
+  // return updateSlackMessage(
+  //   { channel, text: `Woop!!!\n\n\n${chadResponse}`, ts },
+  //   env
+  // );
+};
