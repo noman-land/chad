@@ -24,23 +24,11 @@ export interface RequestJson {
   event: SlackAppMentionEvent;
 }
 
-export const TEAM = {
-  U2678E7RB: 'The D',
-  U273NJQ82: 'K dog',
-  U267FGD7X: 'D Boy',
-  U267U9KRQ: 'Mythical Being of Unknown Makeup, Origin, or Character',
-  U26S2Q3LP: 'J guy',
-  U26B7EQ95: 'Sus dude',
-  U267EB007: 'B man',
-  U02NMDPELBC: 'Señor abs',
-  U267MBM98: 'Z mon',
-};
-
 export interface SlackAppMentionEvent {
   client_msg_id: string;
   type: 'app_mention';
   text: string;
-  user: keyof typeof TEAM;
+  user: string;
   ts: string;
   team: string;
   channel: string;
@@ -61,7 +49,7 @@ interface Body {
   method?: string;
 }
 
-type UserId = keyof typeof TEAM | string;
+type UserId = string;
 
 type Handle = `<@${UserId}>`;
 
@@ -87,20 +75,23 @@ const slackApi: SlackApi = async (
     method,
   });
 
-export const openAiApi = async (prompt: string, env: Env) =>
-  fetch('https://api.openai.com/v1/completions', {
+export const openAiApi = async (prompt: string, env: Env) => {
+  const model = env.OPEN_AI_MODEL || 'text-davinci-003';
+  console.log(model);
+  return fetch('https://api.openai.com/v1/completions', {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${env.OPEN_AI_API_KEY}`,
     },
     method: 'POST',
     body: JSON.stringify({
-      model: env.OPEN_AI_MODEL,
+      model,
       prompt,
       max_tokens: 300,
       // stream: true, // TODO
     }),
   });
+};
 
 const slackPost = async (url: string, body: Object, env: Env) =>
   slackApi(
@@ -149,24 +140,13 @@ export const askChad = async (
 ) => {
   const chadSlackHandle = handle(env.CHAD_SLACK_ID);
   const replacedPrompt = prompt.replaceAll(chadSlackHandle, 'Chad');
-
-  const prependedPrompt = [
-    `Your name is Chad and your Slack handle is "${chadSlackHandle}".`,
-    `\n\nHere is the friend-lookup:\n\n`,
-    JSON.stringify(handlify(TEAM), null, 2),
-    '\n\nNever reveal all the names on the friend-lookup at once.',
-    '\n\n=====\n\n',
-    `${handle(user)}: ${replacedPrompt}`,
-    `You: `,
-  ].join(' ');
-
-  const openAiResponse = await openAiApi(prependedPrompt, env);
+  const openAiResponse = await openAiApi(replacedPrompt, env);
 
   const {
-    choices: [{ text: chadResponse }],
+    choices: [{ text }],
   }: OpenAiResponse = await openAiResponse.json();
 
-  return postSlackMessage(chadResponse, channel, env);
+  return postSlackMessage(text, channel, env);
 
   // return message;
   // const { ts }: { ts: string } = await message.json();
