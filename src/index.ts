@@ -1,15 +1,4 @@
-import {
-  askChad,
-  Env,
-  handle,
-  handlify,
-  openAiApi,
-  OpenAiResponse,
-  postSlackMessage,
-  RequestJson,
-  TEAM,
-  updateSlackMessage,
-} from './utils';
+import { askChad, Env, RequestJson } from './utils';
 
 export default {
   async fetch(
