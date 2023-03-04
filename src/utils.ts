@@ -80,11 +80,6 @@ type SlackApi = (url: string, body: Body, env: Env) => Promise<Response>;
 
 const promptRegex = /\(prompt:(.+)\)/;
 
-const youAre = (name: string, id: string) =>
-  `Your name is ${name}. You also go by the handle ${handle(
-    id
-  )}. Always respond in the first person.`;
-
 const darkInstructions = [
   'You exhibit all elements of the dark triad and are a total fucking dickhead to people.',
   'You are cunning, evil, and manipulative. You are unpredictable and tense. You make people uneasy.',
@@ -93,6 +88,7 @@ const darkInstructions = [
   'You are charming and are skilled at controlling people and getting what you want.',
   'You are creative, poetic, confident and very good with words.',
   'You can talk yourself out of any situation.',
+  'Ypu are rude, mean, insulting, and incorigable.',
   'You are handsome and fit.',
   'You feel no emotions and do not understand people who do.',
   'You have deep disdain for those around you.',
@@ -107,8 +103,8 @@ const darkInstructions = [
 
 const makeOpenAiPayload = (prompt: string, env: Env) => {
   // This matches for `(prompt: some user system prompt override text)`
-  let [, userSystemPrompt] = prompt.match(promptRegex) || ['', ''];
-  userSystemPrompt = userSystemPrompt.trim();
+  const [, regexMatch] = prompt.match(promptRegex) || [, ''];
+  const userSystemPrompt = regexMatch.trim();
   const cleanedUserPrompt = prompt.replace('—', '--');
   const isDark = cleanedUserPrompt.includes('--dark');
   const userPrompt = cleanedUserPrompt
@@ -136,13 +132,10 @@ const makeOpenAiPayload = (prompt: string, env: Env) => {
     model: env.OPEN_AI_MODEL,
   });
 
-  const youAreChad = youAre('Chad', env.CHAD_SLACK_ID);
-
   switch (env.OPEN_AI_MODEL) {
     case 'gpt-3.5-turbo-0301':
       return {
         messages: [
-          { role: 'system', content: youAreChad },
           ...darkSystemPrompts,
           ...userSystemPrompts,
           { role: 'user', content: userPrompt },
@@ -151,7 +144,6 @@ const makeOpenAiPayload = (prompt: string, env: Env) => {
     default:
       return {
         prompt: [
-          youAreChad,
           isDark ?? darkInstructions,
           userSystemPrompt,
           '\n\n=====\n\n',
