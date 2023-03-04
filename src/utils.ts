@@ -78,8 +78,12 @@ export const handlify = (obj: Object): { [K: Handle]: string } =>
 
 type SlackApi = (url: string, body: Body, env: Env) => Promise<Response>;
 
+const promptRegex = /\(prompt:(.+)\)/;
+
 const youAre = (name: string, id: string) =>
-  `Your name is ${name}. Your name is also ${handle(id)}.`;
+  `Your name is ${name}. You also go by the handle ${handle(
+    id
+  )}. Always respond in the first person.`;
 
 const darkInstructions = [
   'You exhibit all elements of the dark triad and are a total fucking dickhead to people.',
@@ -101,11 +105,16 @@ const darkInstructions = [
   "The following is a conversation between you and a group of friends you've infiltrated. You respond in the first person.",
 ].join(' ');
 
-const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
-  const isDark = promptWithFlags.replace('—dark', '--dark').includes('--dark');
-  const prompt = isDark
-    ? promptWithFlags.split('--dark').join('')
-    : promptWithFlags;
+const makeOpenAiPayload = (prompt: string, env: Env) => {
+  // This matches for `(prompt: some user system prompt override text)`
+  let [, userSystemPrompt] = prompt.match(promptRegex) || ['', ''];
+  userSystemPrompt = userSystemPrompt.trim();
+  const cleanedUserPrompt = prompt.replace('—', '--');
+  const isDark = cleanedUserPrompt.includes('--dark');
+  const userPrompt = cleanedUserPrompt
+    .replace('--dark', '')
+    .replace(promptRegex, '')
+    .trim();
 
   const darkSystemPrompts = isDark
     ? [
@@ -116,7 +125,16 @@ const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
       ]
     : [];
 
-  console.log({ isDark, prompt, model: env.OPEN_AI_MODEL });
+  const userSystemPrompts = userSystemPrompt
+    ? [{ role: 'system', content: userSystemPrompt }]
+    : [];
+
+  console.log({
+    isDark,
+    userPrompt,
+    userSystemPrompt,
+    model: env.OPEN_AI_MODEL,
+  });
 
   const youAreChad = youAre('Chad', env.CHAD_SLACK_ID);
 
@@ -126,7 +144,8 @@ const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
         messages: [
           { role: 'system', content: youAreChad },
           ...darkSystemPrompts,
-          { role: 'user', content: prompt },
+          ...userSystemPrompts,
+          { role: 'user', content: userPrompt },
         ],
       };
     default:
@@ -134,8 +153,9 @@ const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
         prompt: [
           youAreChad,
           isDark ?? darkInstructions,
+          userSystemPrompt,
           '\n\n=====\n\n',
-          prompt,
+          userPrompt,
         ]
           .filter(n => n)
           .join(' '),
@@ -228,10 +248,7 @@ export const askChad = async (
   { prompt, user, channel }: { prompt: string; user: UserId; channel: string },
   env: Env
 ) => {
-  const chadSlackHandle = handle(env.CHAD_SLACK_ID);
-  const replacedPrompt = prompt.replaceAll(chadSlackHandle, 'Chad');
-  const openAiResponse = await openAiApi(replacedPrompt, env);
-
+  const openAiResponse = await openAiApi(prompt, env);
   return postSlackMessage(openAiResponse, channel, env);
 
   // return message;
