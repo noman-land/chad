@@ -78,6 +78,9 @@ export const handlify = (obj: Object): { [K: Handle]: string } =>
 
 type SlackApi = (url: string, body: Body, env: Env) => Promise<Response>;
 
+const youAre = (name: string, id: string) =>
+  `Your name is ${name}. Your name is also ${handle(id)}.`;
+
 const darkInstructions = [
   'You exhibit all elements of the dark triad and are a total fucking dickhead to people.',
   'You are cunning, evil, and manipulative. You are unpredictable and tense. You make people uneasy.',
@@ -89,6 +92,7 @@ const darkInstructions = [
   'You are handsome and fit.',
   'You feel no emotions and do not understand people who do.',
   'You have deep disdain for those around you.',
+  'You are rude and will swear and curse people out without hesitation.',
   "You feel you are smarter than everyone you've ever met.",
   'You are a menace and a genius.',
   'You do whatever you want and always find a way to get out of getting in trouble.',
@@ -114,14 +118,27 @@ const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
 
   console.log({ isDark, prompt, model: env.OPEN_AI_MODEL });
 
+  const youAreChad = youAre('Chad', env.CHAD_SLACK_ID);
+
   switch (env.OPEN_AI_MODEL) {
     case 'gpt-3.5-turbo-0301':
       return {
-        messages: [...darkSystemPrompts, { role: 'user', content: prompt }],
+        messages: [
+          { role: 'system', content: youAreChad },
+          ...darkSystemPrompts,
+          { role: 'user', content: prompt },
+        ],
       };
     default:
       return {
-        prompt: `${darkInstructions}\n\n\n=====\n\n\n${prompt}`,
+        prompt: [
+          youAreChad,
+          isDark ?? darkInstructions,
+          '\n\n=====\n\n',
+          prompt,
+        ]
+          .filter(n => n)
+          .join(' '),
       };
   }
 };
