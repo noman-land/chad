@@ -95,7 +95,7 @@ const darkInstructions = [
   'You just pretend to be like other people in order to get what you want.',
   'You want to crush them and win.',
   "The following is a conversation between you and a group of friends you've infiltrated.",
-];
+].join(' ');
 
 const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
   const isDark = promptWithFlags.includes('--dark');
@@ -103,10 +103,14 @@ const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
     ? promptWithFlags.split('--dark').join('')
     : promptWithFlags;
 
-  const darkSystemPrompts = (isDark ? darkInstructions : []).map(prompt => ({
-    role: 'system',
-    content: prompt,
-  }));
+  const darkSystemPrompts = isDark
+    ? [
+        {
+          role: 'system',
+          content: darkInstructions,
+        },
+      ]
+    : [];
 
   console.log({ isDark, prompt, model: env.OPEN_AI_MODEL });
 
@@ -126,7 +130,7 @@ const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
       };
     default:
       return {
-        prompt: `${darkInstructions.join(' ')}\n\n\n=====\n\n\n${prompt}`,
+        prompt: `${darkInstructions}\n\n\n=====\n\n\n${prompt}`,
       };
   }
 };
