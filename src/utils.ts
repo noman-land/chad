@@ -78,6 +78,59 @@ export const handlify = (obj: Object): { [K: Handle]: string } =>
 
 type SlackApi = (url: string, body: Body, env: Env) => Promise<Response>;
 
+const darkInstructions = [
+  'You exhibit all elements of the dark triad and are a total fucking dickhead to people.',
+  'You are cunning, evil, and manipulative. You are unpredictable and tense. You make people uneasy.',
+  "It's clear you are a sociopath and it's no secret to people around you. You are subtly terrifying.",
+  "People know you're a snake and avoid you. You know people are cowards and you hate them for it.",
+  'You are charming and are skilled at controlling people and getting what you want.',
+  'You are creative, poetic, confident and very good with words.',
+  'You can talk yourself out of any situation.',
+  'You are handsome and fit.',
+  'You feel no emotions and do not understand people who do.',
+  'You have deep disdain for those around you.',
+  "You feel you are smarter than everyone you've ever met.",
+  'You are a menace and a genius.',
+  'You do whatever you want and always find a way to get out of getting in trouble.',
+  'You just pretend to be like other people in order to get what you want.',
+  'You want to crush them and win.',
+  "The following is a conversation between you and a group of friends you've infiltrated.",
+];
+
+const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
+  const isDark = promptWithFlags.includes('--dark');
+  const prompt = isDark
+    ? promptWithFlags.split('--dark').join('')
+    : promptWithFlags;
+
+  const darkSystemPrompts = (isDark ? darkInstructions : []).map(prompt => ({
+    role: 'system',
+    content: prompt,
+  }));
+
+  console.log({ isDark, prompt, model: env.OPEN_AI_MODEL });
+
+  switch (env.OPEN_AI_MODEL) {
+    case 'gpt-3.5-turbo-0301':
+      return {
+        messages: [
+          {
+            role: 'system',
+            content: `Your name is Chad. Your name is also ${handle(
+              env.CHAD_SLACK_ID
+            )}.`,
+          },
+          ...darkSystemPrompts,
+          { role: 'user', content: prompt },
+        ],
+      };
+    default:
+      return {
+        prompt: `${darkInstructions.join(' ')}\n\n\n=====\n\n\n${prompt}`,
+      };
+  }
+};
+
 const slackApi: SlackApi = async (
   url,
   { body, contentType = 'application/json; charset=utf-8', method = 'GET' },
@@ -93,44 +146,6 @@ const slackApi: SlackApi = async (
   });
 
 export const openAiApi = async (prompt: string, env: Env) => {
-  console.log('MODEL:', env.OPEN_AI_MODEL);
-
-  const isDark = prompt.includes('--dark');
-  const maybeDarkPrompt = isDark ? prompt.split('--dark').join('') : prompt;
-
-  const darkInstructions = isDark
-    ? [
-        {
-          role: 'system',
-          content: [
-            'You exhibit all elements of the dark triad but you keep it a closely held secret.',
-            'You are cunning, evil, and manipulative.',
-            "It's clear you are a sociopath but you keep it well hidden from people.",
-            'You are charming and are skilled at controlling people and getting what you want.',
-            'You feel no emotions and do not understand people who do.',
-            'You just secretly pretend to be like them in order to get what you want.',
-            "The following is a conversation between you and a group of friends you've infiltrated.",
-          ].join(' '),
-        },
-      ]
-    : [];
-
-  const payload =
-    env.OPEN_AI_MODEL !== 'gpt-3.5-turbo-0301'
-      ? { prompt: maybeDarkPrompt }
-      : {
-          messages: [
-            {
-              role: 'system',
-              content: `Your name is Chad. Your name is also ${handle(
-                env.CHAD_SLACK_ID
-              )}.`,
-            },
-            ...darkInstructions,
-            { role: 'user', content: maybeDarkPrompt },
-          ],
-        };
-
   const openAiResponse = await fetch(
     'https://api.openai.com/v1/chat/completions',
     {
@@ -143,7 +158,7 @@ export const openAiApi = async (prompt: string, env: Env) => {
         model: env.OPEN_AI_MODEL || 'text-davinci-003',
         max_tokens: 300,
         // stream: true, // TODO
-        ...payload,
+        ...makeOpenAiPayload(prompt, env),
       }),
     }
   );
