@@ -1,4 +1,5 @@
-import { askChad, Env, RequestJson } from './utils';
+import { Env, RequestJson } from './types';
+import { askChad } from './utils';
 
 export default {
   async fetch(
