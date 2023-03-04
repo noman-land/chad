@@ -94,18 +94,23 @@ const slackApi: SlackApi = async (
 
 export const openAiApi = async (prompt: string, env: Env) => {
   console.log('MODEL:', env.OPEN_AI_MODEL);
+
   const isDark = prompt.includes('--dark');
-
   const maybeDarkPrompt = isDark ? prompt.split('--dark').join('') : prompt;
-
-  console.log({ isDark });
 
   const darkInstructions = isDark
     ? [
         {
           role: 'system',
-          content:
-            "You exhibit all elements of the dark triad but you keep it a closely help secret. You are cunning, evil, and manipulative. It's clear you are a sociopath but you keep it well hidden from people. You are charming and are skilled at controlling people and getting what you want. You feel no emotions and do not understand people who do. You just secretly pretend to be like them in order to get what you want. The following is a conversation between you and a group of friends you've infiltrated.",
+          content: [
+            'You exhibit all elements of the dark triad but you keep it a closely help secret.',
+            'You are cunning, evil, and manipulative.',
+            "It's clear you are a sociopath but you keep it well hidden from people.",
+            'You are charming and are skilled at controlling people and getting what you want.',
+            'You feel no emotions and do not understand people who do.',
+            'You just secretly pretend to be like them in order to get what you want.',
+            "The following is a conversation between you and a group of friends you've infiltrated.",
+          ].join(' '),
         },
       ]
     : [];
