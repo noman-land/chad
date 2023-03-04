@@ -94,7 +94,7 @@ const darkInstructions = [
   'You do whatever you want and always find a way to get out of getting in trouble.',
   'You just pretend to be like other people in order to get what you want.',
   'You want to crush them and win.',
-  "The following is a conversation between you and a group of friends you've infiltrated.",
+  "The following is a conversation between you and a group of friends you've infiltrated. You respond in the first person.",
 ].join(' ');
 
 const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
@@ -117,16 +117,7 @@ const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
   switch (env.OPEN_AI_MODEL) {
     case 'gpt-3.5-turbo-0301':
       return {
-        messages: [
-          {
-            role: 'system',
-            content: `Your name is Chad. Your name is also ${handle(
-              env.CHAD_SLACK_ID
-            )}.`,
-          },
-          ...darkSystemPrompts,
-          { role: 'user', content: prompt },
-        ],
+        messages: [...darkSystemPrompts, { role: 'user', content: prompt }],
       };
     default:
       return {
@@ -151,7 +142,9 @@ const slackApi: SlackApi = async (
 
 export const openAiApi = async (prompt: string, env: Env) => {
   const openAiResponse = await fetch(
-    'https://api.openai.com/v1/chat/completions',
+    env.OPEN_AI_MODEL === 'gpt-3.5-turbo-0301'
+      ? 'https://api.openai.com/v1/chat/completions'
+      : 'https://api.openai.com/v1/completions',
     {
       headers: {
         'Content-Type': 'application/json',
