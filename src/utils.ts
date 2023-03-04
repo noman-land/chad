@@ -102,7 +102,7 @@ const darkInstructions = [
 ].join(' ');
 
 const makeOpenAiPayload = (promptWithFlags: string, env: Env) => {
-  const isDark = promptWithFlags.includes('--dark');
+  const isDark = promptWithFlags.replace('—dark', '--dark').includes('--dark');
   const prompt = isDark
     ? promptWithFlags.split('--dark').join('')
     : promptWithFlags;
