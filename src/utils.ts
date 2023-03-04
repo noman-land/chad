@@ -7,7 +7,7 @@ export interface Env {
   CHAD: KVNamespace;
   CHAD_SLACK_ID: string;
   TUNNEL_URL: string;
-  OPEN_AI_MODEL: string;
+  OPEN_AI_MODEL: OpenAiModel;
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
   // MY_KV_NAMESPACE: KVNamespace;
   //
@@ -35,13 +35,30 @@ export interface SlackAppMentionEvent {
   event_ts: string;
 }
 
-interface CompletionChoice {
+interface CompletionChoiceV1 {
   text: string;
 }
 
-export interface OpenAiResponse {
-  choices: CompletionChoice[];
+interface CompletionChoiceV2 {
+  message: { content: string };
 }
+
+type OpenAiModel = 'gpt-3.5-turbo-0301' | 'text-davinci-003';
+
+interface OpenAiResponseBase<Choice> {
+  model: OpenAiModel;
+  choices: Choice[];
+}
+
+interface OpenAiResponseV1 extends OpenAiResponseBase<CompletionChoiceV1> {
+  model: 'text-davinci-003';
+}
+
+interface OpenAiResponseV2 extends OpenAiResponseBase<CompletionChoiceV2> {
+  model: 'gpt-3.5-turbo-0301';
+}
+
+type OpenAiResponse = OpenAiResponseV1 | OpenAiResponseV2;
 
 interface Body {
   body: string;
@@ -76,21 +93,60 @@ const slackApi: SlackApi = async (
   });
 
 export const openAiApi = async (prompt: string, env: Env) => {
-  const model = env.OPEN_AI_MODEL || 'text-davinci-003';
-  console.log(model);
-  return fetch('https://api.openai.com/v1/completions', {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${env.OPEN_AI_API_KEY}`,
-    },
-    method: 'POST',
-    body: JSON.stringify({
-      model,
-      prompt,
-      max_tokens: 300,
-      // stream: true, // TODO
-    }),
-  });
+  console.log('MODEL:', env.OPEN_AI_MODEL);
+  const isDark = prompt.includes('--dark');
+
+  const maybeDarkPrompt = isDark ? prompt.split('--dark').join('') : prompt;
+
+  console.log({ isDark });
+
+  const darkInstructions = isDark
+    ? [
+        {
+          role: 'system',
+          content:
+            "You exhibit all elements of the dark triad. You are cunning, evil, and manipulative. It's clear you are a sociopath. You are charming and are skilled at controlling people and getting what you want. You feel no emotions and do not understand people who do. You just pretend to be like them in order to get what you want. The following is a conversation between you and a group of friends you've infiltrated.",
+        },
+      ]
+    : [];
+
+  const payload =
+    env.OPEN_AI_MODEL !== 'gpt-3.5-turbo-0301'
+      ? { prompt: maybeDarkPrompt }
+      : {
+          messages: [
+            {
+              role: 'system',
+              content: `Your name is Chad. Your name is also ${handle(
+                env.CHAD_SLACK_ID
+              )}.`,
+            },
+            ...darkInstructions,
+            { role: 'user', content: maybeDarkPrompt },
+          ],
+        };
+
+  const openAiResponse = await fetch(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.OPEN_AI_API_KEY}`,
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        model: env.OPEN_AI_MODEL || 'text-davinci-003',
+        max_tokens: 300,
+        // stream: true, // TODO
+        ...payload,
+      }),
+    }
+  );
+
+  const { model, choices } = await openAiResponse.json<OpenAiResponse>();
+  return model === 'gpt-3.5-turbo-0301'
+    ? choices[0].message.content
+    : choices[0].text;
 };
 
 const slackPost = async (url: string, body: Object, env: Env) =>
@@ -142,11 +198,7 @@ export const askChad = async (
   const replacedPrompt = prompt.replaceAll(chadSlackHandle, 'Chad');
   const openAiResponse = await openAiApi(replacedPrompt, env);
 
-  const {
-    choices: [{ text }],
-  }: OpenAiResponse = await openAiResponse.json();
-
-  return postSlackMessage(text, channel, env);
+  return postSlackMessage(openAiResponse, channel, env);
 
   // return message;
   // const { ts }: { ts: string } = await message.json();
