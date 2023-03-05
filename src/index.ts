@@ -1,5 +1,5 @@
 import { Env, RequestJson } from './types';
-import { askChad } from './utils';
+import { askChad, fetchLocalTunnel } from './utils';
 
 export default {
   async fetch(
@@ -15,11 +15,7 @@ export default {
       console.log('* * * * * * * * * * * * * * * * * * *');
       console.log('* * * BYPASSING TO LOCAL TUNNEL * * *');
       console.log('* * * * * * * * * * * * * * * * * * *');
-      return fetch(`https://${env.TUNNEL_URL}`, {
-        headers: request.headers,
-        body: request.body,
-        method: request.method,
-      });
+      return fetchLocalTunnel(request, env);
     }
 
     const {

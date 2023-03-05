@@ -31,7 +31,7 @@ const darkInstructions = [
 
 const makeOpenAiPayload = (prompt: string, env: Env) => {
   // This matches for `(prompt: some user system prompt override text)`
-  const [, regexMatch] = prompt.match(promptRegex) || [, ''];
+  const [, regexMatch] = prompt.match(promptRegex) ?? [, ''];
   const userSystemPrompt = regexMatch.trim();
   const cleanedUserPrompt = prompt.replace('—', '--');
   const isDark = cleanedUserPrompt.includes('--dark');
@@ -181,3 +181,10 @@ export const askChad = async (
   //   env
   // );
 };
+
+export const fetchLocalTunnel = async (request: Request, env: Env) =>
+  fetch(`https://${env.TUNNEL_URL}`, {
+    headers: request.headers,
+    body: request.body,
+    method: request.method,
+  });
