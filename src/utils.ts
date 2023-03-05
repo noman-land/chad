@@ -1,4 +1,4 @@
-import { Env, Handle, OpenAiResponse, SlackApi, UserId } from './types';
+import { Env, Handle, UserId } from './types';
 
 export const handle = (id: UserId): Handle => `<@${id}>`;
 export const handlify = (obj: Object): { [K: Handle]: string } =>
