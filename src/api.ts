@@ -86,7 +86,7 @@ export const askChad = async (
   return postSlackMessage(openAiResponse, channel, env);
 
   // return message;
-  // const { ts }: { ts: string } = await message.json();
+  // const { ts } = await message.json<{ ts: string }>();
 
   // console.log({ ts, prependedPrompt, chadResponse });
 

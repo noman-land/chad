@@ -19,7 +19,7 @@ export default {
       api_app_id,
       token,
       event: { channel, text, user },
-    }: RequestJson = await request.json();
+    } = await request.json<RequestJson>();
 
     if (
       api_app_id !== env.SLACK_APP_ID ||
