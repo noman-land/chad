@@ -1,5 +1,5 @@
-import { Env, OpenAiResponse, SlackApi, UserId } from './types';
 import { makeOpenAiPayload } from './utils';
+import { Env, OpenAiResponse, SlackApi, UserId } from './types';
 
 const slackApi: SlackApi = async (
   url,

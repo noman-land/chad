@@ -1,5 +1,5 @@
-import { Env, RequestJson } from './types';
 import { askChad, fetchLocalTunnel } from './api';
+import { Env, RequestJson } from './types';
 
 export default {
   async fetch(

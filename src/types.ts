@@ -32,12 +32,6 @@ interface OpenAiResponseV2 extends OpenAiResponseBase<CompletionChoiceV2> {
   model: 'gpt-3.5-turbo-0301';
 }
 
-interface Body {
-  body: string;
-  contentType?: string;
-  method?: string;
-}
-
 export interface Env {
   SLACK_APP_ID: string;
   SLACK_BOT_TOKEN: string;
@@ -70,4 +64,12 @@ export type UserId = string;
 
 export type Handle = `<@${UserId}>`;
 
-export type SlackApi = (url: string, body: Body, env: Env) => Promise<Response>;
+export type SlackApi = (
+  url: string,
+  body: {
+    body: string;
+    contentType?: string;
+    method?: string;
+  },
+  env: Env
+) => Promise<Response>;
