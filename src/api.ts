@@ -96,9 +96,13 @@ export const askChad = async (
   // );
 };
 
-export const fetchLocalTunnel = async (request: Request, env: Env) =>
-  fetch(`https://${env.TUNNEL_URL}`, {
+export const fetchLocalTunnel = async (request: Request, env: Env) => {
+  console.log('* * * * * * * * * * * * * * * * * * *');
+  console.log('* * * BYPASSING TO LOCAL TUNNEL * * *');
+  console.log('* * * * * * * * * * * * * * * * * * *');
+  return fetch(`https://${env.TUNNEL_URL}`, {
     headers: request.headers,
     body: request.body,
     method: request.method,
   });
+};

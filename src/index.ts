@@ -12,9 +12,6 @@ export default {
     }
 
     if (await env.CHAD.get('LOCAL_BYPASS_ENABLED')) {
-      console.log('* * * * * * * * * * * * * * * * * * *');
-      console.log('* * * BYPASSING TO LOCAL TUNNEL * * *');
-      console.log('* * * * * * * * * * * * * * * * * * *');
       return fetchLocalTunnel(request, env);
     }
 
