@@ -1,4 +1,4 @@
-import { makeOpenAiPayload } from './utils';
+import { makeOpenAiPayload, streamCompletion } from './utils';
 import { Env, OpenAiResponse, SlackApi, UserId } from './types';
 
 const slackApi: SlackApi = async (
@@ -16,7 +16,8 @@ const slackApi: SlackApi = async (
   });
 
 const openAiApi = async (prompt: string, env: Env) => {
-  const openAiResponse = await fetch(
+  // const openAiResponse = await fetch(
+  return fetch(
     env.OPEN_AI_MODEL === 'gpt-3.5-turbo-0301'
       ? 'https://api.openai.com/v1/chat/completions'
       : 'https://api.openai.com/v1/completions',
@@ -24,21 +25,22 @@ const openAiApi = async (prompt: string, env: Env) => {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${env.OPEN_AI_API_KEY}`,
+        'Response-Type': 'stream',
       },
       method: 'POST',
       body: JSON.stringify({
         model: env.OPEN_AI_MODEL || 'text-davinci-003',
         max_tokens: 300,
-        // stream: true, // TODO
+        stream: true,
         ...makeOpenAiPayload(prompt, env),
       }),
     }
   );
 
-  const { model, choices } = await openAiResponse.json<OpenAiResponse>();
-  return model === 'gpt-3.5-turbo-0301'
-    ? choices[0].message.content
-    : choices[0].text;
+  // const { model, choices } = await openAiResponse.json<OpenAiResponse>();
+  // return model === 'gpt-3.5-turbo-0301'
+  //   ? choices[0].message.content
+  //   : choices[0].text;
 };
 
 const slackPost = async (url: string, body: Object, env: Env) =>
@@ -78,24 +80,6 @@ const updateSlackMessage = async (
     env
   );
 
-export const askChad = async (
-  { prompt, user, channel }: { prompt: string; user: UserId; channel: string },
-  env: Env
-) => {
-  const openAiResponse = await openAiApi(prompt, env);
-  return postSlackMessage(openAiResponse, channel, env);
-
-  // return message;
-  // const { ts } = await message.json<{ ts: string }>();
-
-  // console.log({ ts, prependedPrompt, chadResponse });
-
-  // return updateSlackMessage(
-  //   { channel, text: `Woop!!!\n\n\n${chadResponse}`, ts },
-  //   env
-  // );
-};
-
 export const fetchLocalTunnel = async (request: Request, env: Env) => {
   console.log('* * * * * * * * * * * * * * * * * * *');
   console.log('* * * BYPASSING TO LOCAL TUNNEL * * *');
@@ -105,4 +89,65 @@ export const fetchLocalTunnel = async (request: Request, env: Env) => {
     body: request.body,
     method: request.method,
   });
+};
+
+export const askChad = async (
+  { prompt, user, channel }: { prompt: string; user: UserId; channel: string },
+  env: Env
+) => {
+  let chadResponse = '';
+  let threadTs = '';
+  let chunkCount = 0;
+  let networkCalls = 0;
+
+  const { body } = await openAiApi(prompt, env);
+
+  for await (const chunk of streamCompletion(body!)) {
+    try {
+      const parsedChoice = JSON.parse(chunk).choices[0];
+      const content =
+        env.OPEN_AI_MODEL === 'gpt-3.5-turbo-0301'
+          ? parsedChoice.delta.content
+          : parsedChoice.message.text;
+
+      chunkCount++;
+      chadResponse = (chadResponse + (content || '')).trim();
+
+      if (!chadResponse.length) {
+        continue;
+      }
+
+      if (!threadTs) {
+        const slackResponse = await postSlackMessage(
+          chadResponse,
+          channel,
+          env
+        );
+        networkCalls++;
+        const { ts } = await slackResponse.json<{ ts: string }>();
+        threadTs = ts;
+        continue;
+      }
+
+      if (chunkCount % 10 === 0) {
+        networkCalls++;
+        await updateSlackMessage(
+          { channel, text: chadResponse, ts: threadTs },
+          env
+        );
+      }
+    } catch (error) {
+      console.error(
+        '* * * Could not JSON parse stream chunk * * *',
+        chunk,
+        error
+      );
+    }
+  }
+
+  networkCalls++;
+  await updateSlackMessage({ channel, text: chadResponse, ts: threadTs }, env);
+  console.log(
+    `* * * Done updating Slack thread after ${chunkCount} chunks and ${networkCalls} network calls * * *`
+  );
 };
