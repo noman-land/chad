@@ -1,6 +1,6 @@
 # <img src="./chad.png" height=48/> Chad
 
-Chat to ChatGPT via Slack
+Chat to ChatGPT via Slack. Deployed via Cloudflare Workers.
 
 You must have an env file called `.dev.vars` with the following variables
 
