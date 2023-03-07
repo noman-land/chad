@@ -111,24 +111,26 @@ export const askChad = async (
           : parsedChoice.message.text;
 
       chunkCount++;
-      chadResponse = (chadResponse + (content || '')).trim();
+      chadResponse = chadResponse + (content || '');
 
-      if (!chadResponse.length) {
+      if (!chadResponse.trim().length) {
         continue;
       }
 
       if (!threadTs) {
+        networkCalls++;
         const slackResponse = await postSlackMessage(
           chadResponse,
           channel,
           env
         );
-        networkCalls++;
         const { ts } = await slackResponse.json<{ ts: string }>();
         threadTs = ts;
         continue;
       }
 
+      // Slow down updates to every 10th one to prevent spamming
+      // Slack and going over 50 call Cloudflare worker limit
       if (chunkCount % 10 === 0) {
         networkCalls++;
         await updateSlackMessage(
@@ -148,6 +150,6 @@ export const askChad = async (
   networkCalls++;
   await updateSlackMessage({ channel, text: chadResponse, ts: threadTs }, env);
   console.log(
-    `* * * Done updating Slack thread after ${chunkCount} chunks and ${networkCalls} network calls * * *`
+    `* * * Done updating Slack thread after ${chunkCount} chunks and ${networkCalls} network calls * * *\n\n`
   );
 };
