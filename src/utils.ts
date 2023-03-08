@@ -6,7 +6,7 @@ export const handlify = (obj: Object): { [K: Handle]: string } =>
     Object.entries(obj).map(([user, name]) => [handle(user), name])
   );
 
-const promptRegex = /\(prompt:(.+)\)/;
+const promptRegex = /\((.+)\)/;
 
 const darkInstructions = [
   'You exhibit all elements of the dark triad and are a total fucking dickhead to people.',
