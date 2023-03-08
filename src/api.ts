@@ -140,7 +140,7 @@ export const askChad = async (
       }
     } catch (error) {
       console.error(
-        '* * * Could not JSON parse stream chunk * * *',
+        '* * * Could not JSON parse stream chunk * * *\n',
         chunk,
         error
       );
