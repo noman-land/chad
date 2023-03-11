@@ -15,9 +15,8 @@ const slackApi: SlackApi = async (
     method,
   });
 
-const openAiApi = async (prompt: string, env: Env) => {
-  // const openAiResponse = await fetch(
-  return fetch(
+const openAiApi = async (prompt: string, env: Env) =>
+  fetch(
     env.OPEN_AI_MODEL === 'gpt-3.5-turbo-0301'
       ? 'https://api.openai.com/v1/chat/completions'
       : 'https://api.openai.com/v1/completions',
@@ -36,12 +35,6 @@ const openAiApi = async (prompt: string, env: Env) => {
       }),
     }
   );
-
-  // const { model, choices } = await openAiResponse.json<OpenAiResponse>();
-  // return model === 'gpt-3.5-turbo-0301'
-  //   ? choices[0].message.content
-  //   : choices[0].text;
-};
 
 const slackPost = async (url: string, body: Object, env: Env) =>
   slackApi(
@@ -108,10 +101,10 @@ export const askChad = async (
       const content =
         env.OPEN_AI_MODEL === 'gpt-3.5-turbo-0301'
           ? parsedChoice.delta.content
-          : parsedChoice.message.text;
+          : parsedChoice.text;
 
       chunkCount++;
-      chadResponse = chadResponse + (content || '');
+      chadResponse += content || '';
 
       if (!chadResponse.trim().length) {
         continue;
@@ -147,8 +140,14 @@ export const askChad = async (
     }
   }
 
-  networkCalls++;
-  await updateSlackMessage({ channel, text: chadResponse, ts: threadTs }, env);
+  if (chadResponse && threadTs) {
+    networkCalls++;
+    await updateSlackMessage(
+      { channel, text: chadResponse, ts: threadTs },
+      env
+    );
+  }
+
   console.log(
     `* * * Done updating Slack thread after ${chunkCount} chunks and ${networkCalls} network calls * * *\n\n`
   );
