@@ -1,3 +1,6 @@
+import { Readability } from '@mozilla/readability';
+import { JSDOM } from 'jsdom';
+
 import { makeOpenAiPayload, streamCompletion } from './utils';
 import { Env, SlackApi, UserId } from './types';
 
@@ -84,14 +87,58 @@ export const fetchLocalTunnel = async (request: Request, env: Env) => {
   });
 };
 
+const getArticle = async (prompt: string) => {
+  const [url] = prompt
+    .split(' ')
+    .map(word => {
+      try {
+        const [, maybeUrl = ''] = word!.match(/<(.+)(?:\|).+>/) || [];
+        return new URL(maybeUrl);
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter(n => n);
+
+  if (url) {
+    const response = await fetch(url);
+    const content = await response.text();
+    const doc = parse5.parse(content);
+    const article = new Readability(doc).parse();
+
+    return content;
+  }
+};
+
+const defaultSummaryLength = '2 sentences';
+
 export const askChad = async (
-  { prompt, user, channel }: { prompt: string; user: UserId; channel: string },
+  {
+    prompt: _prompt,
+    user,
+    channel,
+  }: { prompt: string; user: UserId; channel: string },
   env: Env
 ) => {
+  let prompt = _prompt;
   let chadResponse = '';
   let threadTs = '';
   let chunkCount = 0;
   let networkCalls = 0;
+  const isTldr = prompt.includes('tldr');
+  console.log(prompt);
+
+  if (isTldr) {
+    const article = (await getArticle(prompt)) || {};
+    const [length] = prompt.match(/\d+ (?:sentence|paragraph)s?/) || [];
+
+    console.log({ article, length });
+
+    prompt = [
+      `Please summarize this article in ${length || defaultSummaryLength}:`,
+      article,
+    ].join('\n\n');
+  }
 
   const { body } = await openAiApi(prompt, env);
 
