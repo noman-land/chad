@@ -6,23 +6,23 @@ export const handlify = (obj: Object): { [K: Handle]: string } =>
     Object.entries(obj).map(([user, name]) => [handle(user), name])
   );
 
-const userSystemPromptRegex = /\((.+)\)/;
-
-const chatInstructions =
-  'Your Slack handle is <@U04NVJG929J> and your name is Chad.';
+const userInjectedSystemPromptRegex = /\((.+)\)/;
 
 export const makeOpenAiPayload = (prompt: string, env: Env) => {
-  const [, regexMatch] = prompt.match(userSystemPromptRegex) ?? [, ''];
-  const userSystemPrompt = regexMatch.trim();
-  const userPrompt = prompt.replace(userSystemPromptRegex, '').trim();
+  const [, regexMatch] = prompt.match(userInjectedSystemPromptRegex) ?? [, ''];
+  const userInjectedSystemPrompt = regexMatch.trim();
+  const userPrompt = prompt
+    .replace(userInjectedSystemPromptRegex, '')
+    .replace(handle(env.CHAD_SLACK_ID), '')
+    .trim();
 
-  const userSystemPrompts = userSystemPrompt
-    ? [{ role: 'system', content: userSystemPrompt }]
+  const userInjectedSystemPrompts = userInjectedSystemPrompt
+    ? [{ role: 'system', content: userInjectedSystemPrompt }]
     : [];
 
   console.log({
     userPrompt,
-    userSystemPrompt,
+    userInjectedSystemPrompt,
     model: env.OPEN_AI_MODEL,
   });
 
@@ -30,27 +30,21 @@ export const makeOpenAiPayload = (prompt: string, env: Env) => {
     case 'gpt-3.5-turbo-0301':
       return {
         messages: [
-          {
-            role: 'system',
-            content: chatInstructions,
-          },
-          {
-            role: 'assistant',
-            content:
-              'I understand. My name is Chad and my Slack handle is <@U04NVJG929J>.',
-          },
-          ...userSystemPrompts,
+          // {
+          //   role: 'system',
+          //   content: '',
+          // },
+          // {
+          //   role: 'assistant',
+          //   content: '',
+          // },
+          ...userInjectedSystemPrompts,
           { role: 'user', content: userPrompt },
         ],
       };
     default:
       return {
-        prompt: [
-          chatInstructions,
-          userSystemPrompt,
-          '\n\n=====\n\n',
-          userPrompt,
-        ]
+        prompt: [userInjectedSystemPrompt, '\n\n=====\n\n', userPrompt]
           .filter(n => n)
           .join(' '),
       };
